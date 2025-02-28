@@ -52,7 +52,7 @@ Coming soon! The project is currently under development.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/gmail2bear.git
+   git clone https://github.com/chadrwalters/gmail2bear.git
    cd gmail2bear
    ```
 
