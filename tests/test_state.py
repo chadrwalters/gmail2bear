@@ -5,7 +5,6 @@ import os
 from unittest import mock
 
 import pytest
-
 from gmail2bear.state import StateManager
 
 
@@ -19,9 +18,7 @@ def state_file_path(tmp_path):
 def existing_state_file(tmp_path):
     """Create an existing state file with some processed IDs."""
     state_file = tmp_path / "existing_state.json"
-    state_data = {
-        "processed_ids": ["id1", "id2", "id3"]
-    }
+    state_data = {"processed_ids": ["id1", "id2", "id3"]}
     state_file.write_text(json.dumps(state_data))
     return str(state_file)
 
@@ -80,7 +77,7 @@ def test_state_manager_mark_as_processed(state_file_path):
     assert state_manager.is_processed("new_id") is True
 
     # Check that the state was saved to the file
-    with open(state_file_path, "r") as f:
+    with open(state_file_path) as f:
         state_data = json.load(f)
         assert "new_id" in state_data["processed_ids"]
 
@@ -106,6 +103,6 @@ def test_state_manager_clear_state(existing_state_file):
     assert len(state_manager.processed_ids) == 0
 
     # Check that the state was saved to the file
-    with open(existing_state_file, "r") as f:
+    with open(existing_state_file) as f:
         state_data = json.load(f)
         assert state_data["processed_ids"] == []

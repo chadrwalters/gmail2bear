@@ -5,15 +5,12 @@ This module handles interactions with the Gmail API.
 
 import base64
 import logging
-import re
 from datetime import datetime
-from email.parser import BytesParser
-from email.policy import default
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from google.oauth2.credentials import Credentials
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +32,7 @@ class GmailClient:
         sender_email: str,
         max_results: int = 10,
         only_unread: bool = True,
-        processed_ids: Optional[List[str]] = None
+        processed_ids: Optional[List[str]] = None,
     ) -> List[Dict]:
         """Get emails from a specific sender.
 
@@ -56,11 +53,12 @@ class GmailClient:
 
         try:
             # Get message IDs matching the query
-            results = self.service.users().messages().list(
-                userId=self.user_id,
-                q=query,
-                maxResults=max_results
-            ).execute()
+            results = (
+                self.service.users()
+                .messages()
+                .list(userId=self.user_id, q=query, maxResults=max_results)
+                .execute()
+            )
 
             messages = results.get("messages", [])
 
@@ -107,15 +105,18 @@ class GmailClient:
         """
         try:
             # Get the full message
-            message = self.service.users().messages().get(
-                userId=self.user_id,
-                id=msg_id,
-                format="full"
-            ).execute()
+            message = (
+                self.service.users()
+                .messages()
+                .get(userId=self.user_id, id=msg_id, format="full")
+                .execute()
+            )
 
             # Extract headers
-            headers = {header["name"].lower(): header["value"]
-                      for header in message["payload"]["headers"]}
+            headers = {
+                header["name"].lower(): header["value"]
+                for header in message["payload"]["headers"]
+            }
 
             # Get subject, from, and date
             subject = headers.get("subject", "(No Subject)")
@@ -145,7 +146,7 @@ class GmailClient:
                 "date": date,
                 "body": body,
                 "is_html": is_html,
-                "labels": message["labelIds"]
+                "labels": message["labelIds"],
             }
 
         except HttpError as error:
@@ -226,9 +227,7 @@ class GmailClient:
         try:
             # Remove UNREAD label
             self.service.users().messages().modify(
-                userId=self.user_id,
-                id=msg_id,
-                body={"removeLabelIds": ["UNREAD"]}
+                userId=self.user_id, id=msg_id, body={"removeLabelIds": ["UNREAD"]}
             ).execute()
             logger.debug(f"Marked email {msg_id} as read")
             return True

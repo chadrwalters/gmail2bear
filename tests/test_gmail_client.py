@@ -4,9 +4,8 @@ import base64
 from unittest import mock
 
 import pytest
-from googleapiclient.errors import HttpError
-
 from gmail2bear.gmail_client import GmailClient
+from googleapiclient.errors import HttpError
 
 
 @pytest.fixture
@@ -31,13 +30,11 @@ def mock_message():
             "headers": [
                 {"name": "Subject", "value": "Test Subject"},
                 {"name": "From", "value": "sender@example.com"},
-                {"name": "Date", "value": "Mon, 01 Jan 2023 12:00:00 +0000"}
+                {"name": "Date", "value": "Mon, 01 Jan 2023 12:00:00 +0000"},
             ],
             "mimeType": "text/plain",
-            "body": {
-                "data": base64.b64encode("Test body".encode()).decode()
-            }
-        }
+            "body": {"data": base64.b64encode(b"Test body").decode()},
+        },
     }
 
 
@@ -51,24 +48,22 @@ def mock_multipart_message():
             "headers": [
                 {"name": "Subject", "value": "Test Subject"},
                 {"name": "From", "value": "sender@example.com"},
-                {"name": "Date", "value": "Mon, 01 Jan 2023 12:00:00 +0000"}
+                {"name": "Date", "value": "Mon, 01 Jan 2023 12:00:00 +0000"},
             ],
             "mimeType": "multipart/alternative",
             "parts": [
                 {
                     "mimeType": "text/plain",
-                    "body": {
-                        "data": base64.b64encode("Test plain body".encode()).decode()
-                    }
+                    "body": {"data": base64.b64encode(b"Test plain body").decode()},
                 },
                 {
                     "mimeType": "text/html",
                     "body": {
-                        "data": base64.b64encode("<p>Test HTML body</p>".encode()).decode()
-                    }
-                }
-            ]
-        }
+                        "data": base64.b64encode(b"<p>Test HTML body</p>").decode()
+                    },
+                },
+            ],
+        },
     }
 
 
@@ -89,19 +84,21 @@ def test_get_emails_from_sender_success(gmail_client):
             "headers": [
                 {"name": "Subject", "value": "Test Subject"},
                 {"name": "From", "value": "sender@example.com"},
-                {"name": "Date", "value": "Mon, 01 Jan 2023 12:00:00 +0000"}
+                {"name": "Date", "value": "Mon, 01 Jan 2023 12:00:00 +0000"},
             ],
             "mimeType": "text/plain",
-            "body": {
-                "data": base64.b64encode("Test body".encode()).decode()
-            }
-        }
+            "body": {"data": base64.b64encode(b"Test body").decode()},
+        },
     }
 
     # Set up the mock service
     gmail_client.service = mock.Mock()
-    gmail_client.service.users().messages().list().execute.return_value = mock_list_response
-    gmail_client.service.users().messages().get().execute.return_value = mock_get_response
+    gmail_client.service.users().messages().list().execute.return_value = (
+        mock_list_response
+    )
+    gmail_client.service.users().messages().get().execute.return_value = (
+        mock_get_response
+    )
 
     # Call the method
     emails = gmail_client.get_emails_from_sender("sender@example.com", max_results=2)
@@ -122,7 +119,9 @@ def test_get_emails_from_sender_no_emails(gmail_client):
 
     # Set up the mock service
     gmail_client.service = mock.Mock()
-    gmail_client.service.users().messages().list().execute.return_value = mock_list_response
+    gmail_client.service.users().messages().list().execute.return_value = (
+        mock_list_response
+    )
 
     # Call the method
     emails = gmail_client.get_emails_from_sender("sender@example.com")
@@ -155,12 +154,13 @@ def test_get_emails_from_sender_filter_processed(gmail_client):
 
     # Set up the mock service
     gmail_client.service = mock.Mock()
-    gmail_client.service.users().messages().list().execute.return_value = mock_list_response
+    gmail_client.service.users().messages().list().execute.return_value = (
+        mock_list_response
+    )
 
     # Call the method with processed IDs
     emails = gmail_client.get_emails_from_sender(
-        "sender@example.com",
-        processed_ids=["12345", "67890"]
+        "sender@example.com", processed_ids=["12345", "67890"]
     )
 
     # Check the results
@@ -232,9 +232,7 @@ def test_mark_as_read_success(gmail_client):
     # Check the results
     assert result is True
     gmail_client.service.users().messages().modify.assert_called_once_with(
-        userId="me",
-        id="12345",
-        body={"removeLabelIds": ["UNREAD"]}
+        userId="me", id="12345", body={"removeLabelIds": ["UNREAD"]}
     )
 
 

@@ -3,8 +3,6 @@
 import urllib.parse
 from unittest import mock
 
-import pytest
-
 from gmail2bear.bear import BearClient
 
 
@@ -18,11 +16,7 @@ def test_build_url():
     """Test that _build_url correctly builds a Bear URL."""
     client = BearClient()
 
-    params = {
-        "title": "Test Note",
-        "text": "This is a test note",
-        "tags": "test tag"
-    }
+    params = {"title": "Test Note", "text": "This is a test note", "tags": "test tag"}
 
     url = client._build_url("create", params)
 
@@ -44,7 +38,7 @@ def test_create_note_success():
             title="Test Note",
             body="This is a test note",
             tags=["test", "note"],
-            id_suffix="123"
+            id_suffix="123",
         )
 
     assert result is True
@@ -72,10 +66,7 @@ def test_create_note_no_tags():
         # Mock successful subprocess run
         mock_run.return_value = mock.Mock(returncode=0)
 
-        result = client.create_note(
-            title="Test Note",
-            body="This is a test note"
-        )
+        result = client.create_note(title="Test Note", body="This is a test note")
 
     assert result is True
     mock_run.assert_called_once()
@@ -90,10 +81,7 @@ def test_create_note_subprocess_error():
         mock_run.side_effect = Exception("Subprocess error")
 
         with mock.patch("gmail2bear.bear.logger") as mock_logger:
-            result = client.create_note(
-                title="Test Note",
-                body="This is a test note"
-            )
+            result = client.create_note(title="Test Note", body="This is a test note")
 
     assert result is False
     mock_logger.error.assert_called_once_with(mock.ANY)
@@ -108,10 +96,7 @@ def test_create_note_nonzero_return_code():
         mock_run.return_value = mock.Mock(returncode=1, stderr="Error")
 
         with mock.patch("gmail2bear.bear.logger") as mock_logger:
-            result = client.create_note(
-                title="Test Note",
-                body="This is a test note"
-            )
+            result = client.create_note(title="Test Note", body="This is a test note")
 
     assert result is False
     mock_logger.error.assert_called_once_with(mock.ANY)

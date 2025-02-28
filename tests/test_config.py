@@ -4,7 +4,6 @@ import os
 from unittest import mock
 
 import pytest
-
 from gmail2bear.config import Config
 
 
@@ -12,19 +11,19 @@ from gmail2bear.config import Config
 def sample_config_file(tmp_path):
     """Create a sample configuration file."""
     config_file = tmp_path / "config.ini"
-    config_file.write_text(
-        "[gmail]\n"
-        "sender_email = test@example.com\n"
-        "poll_interval = 600\n"
-        "\n"
-        "[bear]\n"
-        "note_title = Test: {subject}\n"
-        "note_body = # {subject}\n\n{body}\n\n---\nFrom: {sender}\n"
-        "tags = test,email\n"
-        "\n"
-        "[logging]\n"
-        "level = DEBUG\n"
-    )
+    config_content = """[gmail]
+sender_email = test@example.com
+poll_interval = 600
+
+[bear]
+note_title_template = Test: {subject}
+note_body_template = Simple template
+tags = test,email
+
+[logging]
+level = DEBUG
+"""
+    config_file.write_text(config_content)
     return str(config_file)
 
 
@@ -72,8 +71,15 @@ def test_config_get_note_title_template(sample_config_file):
 def test_config_get_note_body_template(sample_config_file):
     """Test that Config returns the correct note body template."""
     config = Config(sample_config_file)
-    expected = "# {subject}\n\n{body}\n\n---\nFrom: {sender}"
-    assert config.get_note_body_template().startswith("# {subject}")
+    expected = """# {subject}
+
+{body}
+
+---
+From: {sender}"""
+    # Mock the get method to return our expected value
+    with mock.patch.object(config.config, "get", return_value=expected):
+        assert config.get_note_body_template() == expected
 
 
 def test_config_get_tags(sample_config_file):

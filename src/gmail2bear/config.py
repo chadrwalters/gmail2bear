@@ -6,8 +6,7 @@ This module handles loading and parsing the configuration file.
 import configparser
 import logging
 import os
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ class Config:
             config_path: Path to the configuration file
         """
         self.config_path = config_path
-        self.config = configparser.ConfigParser()
+        self.config = configparser.ConfigParser(interpolation=None)
         self.loaded = self._load_config()
 
     def _load_config(self) -> bool:
@@ -74,7 +73,9 @@ class Config:
             Note title template (default: "Email: {subject}")
         """
         try:
-            return self.config.get("bear", "note_title", fallback="Email: {subject}")
+            return self.config.get(
+                "bear", "note_title_template", fallback="Email: {subject}"
+            )
         except configparser.NoSectionError as e:
             logger.warning(f"Error getting note title template from config: {e}")
             return "Email: {subject}"
@@ -91,11 +92,17 @@ class Config:
             "Date: {date}\n\n"
             "{body}\n\n"
             "---\n"
-            "Source: Gmail ID {email_id}"
+            "Source: Gmail ID {id}"
         )
 
         try:
-            return self.config.get("bear", "note_body", fallback=default_template)
+            template = self.config.get(
+                "bear", "note_body_template", fallback=default_template
+            )
+            # Remove triple quotes if present (from multiline string)
+            if template.startswith("'''") and template.endswith("'''"):
+                template = template[3:-3]
+            return template
         except configparser.NoSectionError as e:
             logger.warning(f"Error getting note body template from config: {e}")
             return default_template
@@ -137,31 +144,29 @@ class Config:
         # Create default config
         self.config["gmail"] = {
             "sender_email": "example@gmail.com",
-            "poll_interval": "300"
+            "poll_interval": "300",
         }
 
         self.config["bear"] = {
-            "note_title": "Email: {subject}",
-            "note_body": (
+            "note_title_template": "Email: {subject}",
+            "note_body_template": (
                 "# {subject}\n\n"
                 "From: {sender}\n"
                 "Date: {date}\n\n"
                 "{body}\n\n"
                 "---\n"
-                "Source: Gmail ID {email_id}"
+                "Source: Gmail ID {id}"
             ),
-            "tags": "email,gmail"
+            "tags": "email,gmail",
         }
 
-        self.config["logging"] = {
-            "level": "INFO"
-        }
+        self.config["logging"] = {"level": "INFO"}
 
         try:
             with open(self.config_path, "w") as f:
                 self.config.write(f)
             logger.info(f"Created default configuration at {self.config_path}")
             return True
-        except IOError as e:
+        except OSError as e:
             logger.error(f"Error creating default configuration: {e}")
             return False
