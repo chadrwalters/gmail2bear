@@ -23,6 +23,7 @@ global_rules.md
 
 # Project planning
 .Plan
+local-research/
 
 # Dependencies
 node_modules/
@@ -96,6 +97,10 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.pytest_report.xml
+.coverage.*
+nosetests.xml
+pytest-*.xml
 
 # Virtual Environment
 venv/
@@ -139,6 +144,7 @@ config.ini
 processed_emails.txt
 *.pem
 *.key
+MagicMock/
 
 # Sensitive data
 .env
