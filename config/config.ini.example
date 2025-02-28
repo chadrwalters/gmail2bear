@@ -1,0 +1,33 @@
+[gmail]
+# Email address to monitor (comma-separated for multiple in Phase 2)
+sender_email = example@gmail.com
+
+# How often to check for new emails (in seconds, for Phase 3)
+poll_interval = 300
+
+[bear]
+# Template for Bear note title
+# Available placeholders: {subject}, {date}, {sender}
+note_title = Email: {subject}
+
+# Template for Bear note body (Phase 2)
+# Available placeholders: {subject}, {body}, {date}, {sender}, {email_id}
+note_body = # {subject}
+
+From: {sender}
+Date: {date}
+
+{body}
+
+---
+Source: Gmail ID {email_id}
+
+# Tags to add to Bear notes (comma-separated)
+tags = email,gmail
+
+[logging]
+# Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+level = INFO
+
+# Log file path (for Phase 2)
+# file = ~/.gmail2bear/gmail2bear.log
