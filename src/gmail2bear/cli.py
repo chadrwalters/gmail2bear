@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from gmail2bear import __version__
+from gmail2bear.processor import EmailProcessor
 
 
 def setup_logging(level=logging.INFO):
@@ -38,6 +39,18 @@ def parse_args():
         help="Path to Google API credentials file",
     )
     parser.add_argument(
+        "--state",
+        type=str,
+        default=str(Path.home() / ".gmail2bear" / "state.json"),
+        help="Path to state file",
+    )
+    parser.add_argument(
+        "--token",
+        type=str,
+        default=str(Path.home() / ".gmail2bear" / "token.pickle"),
+        help="Path to token file",
+    )
+    parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose logging"
     )
 
@@ -54,6 +67,12 @@ def parse_args():
     auth_parser = subparsers.add_parser("auth", help="Authenticate with Gmail API")
     auth_parser.add_argument(
         "--force", action="store_true", help="Force reauthentication"
+    )
+
+    # Config command
+    config_parser = subparsers.add_parser("config", help="Create default configuration")
+    config_parser.add_argument(
+        "--force", action="store_true", help="Overwrite existing configuration"
     )
 
     return parser.parse_args()
@@ -76,15 +95,53 @@ def main():
         logger.info(f"Creating configuration directory: {config_dir}")
         config_dir.mkdir(parents=True, exist_ok=True)
 
+    # Initialize the processor
+    processor = EmailProcessor(
+        config_path=args.config,
+        credentials_path=args.credentials,
+        state_path=args.state,
+        token_path=args.token
+    )
+
     # Handle commands
     if args.command == "run":
         logger.info("Running email processing")
-        # TODO: Implement email processing
-        logger.warning("Email processing not yet implemented")
+
+        # First authenticate
+        if not processor.authenticate():
+            logger.error("Authentication failed, cannot process emails")
+            return 1
+
+        # Then process emails
+        processed_count = processor.process_emails(once=args.once)
+        logger.info(f"Processed {processed_count} emails")
+
     elif args.command == "auth":
         logger.info("Authenticating with Gmail API")
-        # TODO: Implement authentication
-        logger.warning("Authentication not yet implemented")
+        if processor.authenticate(force_refresh=args.force):
+            logger.info("Authentication successful")
+        else:
+            logger.error("Authentication failed")
+            return 1
+
+    elif args.command == "config":
+        from gmail2bear.config import Config
+
+        logger.info("Creating default configuration")
+        config = Config(args.config)
+
+        if Path(args.config).exists() and not args.force:
+            logger.error(f"Configuration file already exists: {args.config}")
+            logger.error("Use --force to overwrite")
+            return 1
+
+        if config.create_default_config():
+            logger.info(f"Default configuration created at: {args.config}")
+            logger.info("Please edit this file with your settings before running")
+        else:
+            logger.error("Failed to create default configuration")
+            return 1
+
     else:
         logger.error("No command specified")
         return 1
