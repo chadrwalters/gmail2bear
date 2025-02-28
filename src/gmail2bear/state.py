@@ -6,8 +6,7 @@ This module handles tracking of processed emails to prevent duplicates.
 import json
 import logging
 import os
-from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import List, Set
 
 logger = logging.getLogger(__name__)
 
@@ -28,18 +27,22 @@ class StateManager:
     def _load_state(self) -> None:
         """Load the state from the state file."""
         if not os.path.exists(self.state_file_path):
-            logger.debug(f"State file not found at {self.state_file_path}, creating new state")
+            logger.debug(
+                f"State file not found at {self.state_file_path}, creating new state"
+            )
             # Ensure directory exists
             os.makedirs(os.path.dirname(self.state_file_path), exist_ok=True)
             self._save_state()
             return
 
         try:
-            with open(self.state_file_path, "r") as f:
+            with open(self.state_file_path) as f:
                 state_data = json.load(f)
                 self.processed_ids = set(state_data.get("processed_ids", []))
-                logger.debug(f"Loaded {len(self.processed_ids)} processed email IDs from state file")
-        except (json.JSONDecodeError, IOError) as e:
+                logger.debug(
+                    f"Loaded {len(self.processed_ids)} processed email IDs from state"
+                )
+        except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Error loading state file: {e}")
             # Create a new state file if the existing one is corrupted
             self._save_state()
@@ -47,15 +50,15 @@ class StateManager:
     def _save_state(self) -> None:
         """Save the state to the state file."""
         try:
-            state_data = {
-                "processed_ids": list(self.processed_ids)
-            }
+            state_data = {"processed_ids": list(self.processed_ids)}
 
             with open(self.state_file_path, "w") as f:
                 json.dump(state_data, f, indent=2)
 
-            logger.debug(f"Saved {len(self.processed_ids)} processed email IDs to state file")
-        except IOError as e:
+            logger.debug(
+                f"Saved {len(self.processed_ids)} processed email IDs to state file"
+            )
+        except OSError as e:
             logger.error(f"Error saving state file: {e}")
 
     def is_processed(self, email_id: str) -> bool:

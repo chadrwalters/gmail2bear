@@ -4,7 +4,6 @@ This module handles interactions with the Bear note-taking app.
 """
 
 import logging
-import re
 import subprocess
 import urllib.parse
 from typing import Dict, List, Optional
@@ -15,7 +14,7 @@ logger = logging.getLogger(__name__)
 class BearClient:
     """Client for interacting with Bear via x-callback-url."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Bear client."""
         self.base_url = "bear://x-callback-url"
 
@@ -24,7 +23,7 @@ class BearClient:
         title: str,
         body: str,
         tags: Optional[List[str]] = None,
-        id_suffix: Optional[str] = None
+        id_suffix: Optional[str] = None,
     ) -> bool:
         """Create a new note in Bear.
 
@@ -55,7 +54,7 @@ class BearClient:
         params = {
             "title": title,
             "text": body,
-            "open_note": "no"  # Don't open the note after creation
+            "open_note": "no",  # Don't open the note after creation
         }
 
         url = self._build_url("create", params)
@@ -74,10 +73,9 @@ class BearClient:
             Formatted URL string
         """
         # URL encode all parameters
-        encoded_params = "&".join([
-            f"{key}={urllib.parse.quote(str(value))}"
-            for key, value in params.items()
-        ])
+        encoded_params = "&".join(
+            [f"{key}={urllib.parse.quote(str(value))}" for key, value in params.items()]
+        )
 
         return f"{self.base_url}/{action}?{encoded_params}"
 
@@ -91,14 +89,13 @@ class BearClient:
             True if successful, False otherwise
         """
         try:
-            logger.debug(f"Calling Bear URL: {url[:100]}...")  # Log only the beginning for privacy
+            logger.debug(
+                f"Calling Bear URL: {url[:100]}..."
+            )  # Log only the beginning for privacy
 
             # Use subprocess to call the macOS open command
             result = subprocess.run(
-                ["open", url],
-                check=True,
-                capture_output=True,
-                text=True
+                ["open", url], check=True, capture_output=True, text=True
             )
 
             if result.returncode == 0:

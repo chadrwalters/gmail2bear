@@ -9,8 +9,12 @@ from gmail2bear import __version__
 from gmail2bear.processor import EmailProcessor
 
 
-def setup_logging(level=logging.INFO):
-    """Set up logging configuration."""
+def setup_logging(level: int = logging.INFO) -> None:
+    """Set up logging configuration.
+
+    Args:
+        level: The logging level to use
+    """
     logging.basicConfig(
         level=level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -18,11 +22,13 @@ def setup_logging(level=logging.INFO):
     )
 
 
-def parse_args():
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Convert Gmail emails to Bear notes."
-    )
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    Returns:
+        Parsed command-line arguments
+    """
+    parser = argparse.ArgumentParser(description="Convert Gmail emails to Bear notes.")
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
     )
@@ -78,8 +84,12 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
-    """Main entry point for the application."""
+def main() -> int:
+    """Main entry point for the application.
+
+    Returns:
+        Exit code (0 for success, non-zero for failure)
+    """
     args = parse_args()
 
     # Set up logging
@@ -100,7 +110,7 @@ def main():
         config_path=args.config,
         credentials_path=args.credentials,
         state_path=args.state,
-        token_path=args.token
+        token_path=args.token,
     )
 
     # Handle commands

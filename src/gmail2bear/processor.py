@@ -5,8 +5,7 @@ This module handles the main processing logic for Gmail to Bear integration.
 
 import logging
 import time
-from string import Template
-from typing import Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from gmail2bear.auth import get_credentials
 from gmail2bear.bear import BearClient
@@ -25,7 +24,7 @@ class EmailProcessor:
         config_path: str,
         credentials_path: str,
         state_path: str,
-        token_path: Optional[str] = None
+        token_path: Optional[str] = None,
     ):
         """Initialize the email processor.
 
@@ -46,7 +45,7 @@ class EmailProcessor:
         self.bear_client = BearClient()
 
         # These will be initialized when needed
-        self.gmail_client = None
+        self.gmail_client: Optional[GmailClient] = None
 
     def authenticate(self, force_refresh: bool = False) -> bool:
         """Authenticate with the Gmail API.
@@ -59,9 +58,7 @@ class EmailProcessor:
         """
         try:
             credentials = get_credentials(
-                self.credentials_path,
-                self.token_path,
-                force_refresh
+                self.credentials_path, self.token_path, force_refresh
             )
             self.gmail_client = GmailClient(credentials)
             logger.info("Successfully authenticated with Gmail API")
@@ -107,7 +104,7 @@ class EmailProcessor:
                     sender_email=sender_email,
                     max_results=10,
                     only_unread=True,
-                    processed_ids=processed_ids
+                    processed_ids=processed_ids,
                 )
 
                 if not emails:
@@ -133,7 +130,7 @@ class EmailProcessor:
 
         return processed_count
 
-    def _process_single_email(self, email: Dict) -> bool:
+    def _process_single_email(self, email: Dict[str, Any]) -> bool:
         """Process a single email.
 
         Args:
@@ -160,13 +157,10 @@ class EmailProcessor:
             # Create note in Bear
             logger.info(f"Creating Bear note for email: {email['subject']}")
             success = self.bear_client.create_note(
-                title=note_title,
-                body=note_body,
-                tags=tags,
-                id_suffix=email_id
+                title=note_title, body=note_body, tags=tags, id_suffix=email_id
             )
 
-            if success:
+            if success and self.gmail_client:
                 # Mark email as read in Gmail
                 self.gmail_client.mark_as_read(email_id)
 
@@ -176,14 +170,16 @@ class EmailProcessor:
                 logger.info(f"Successfully processed email: {email['subject']}")
                 return True
             else:
-                logger.error(f"Failed to create Bear note for email: {email['subject']}")
+                logger.error(
+                    f"Failed to create Bear note for email: {email['subject']}"
+                )
                 return False
 
         except Exception as e:
             logger.error(f"Error processing email {email_id}: {e}")
             return False
 
-    def _format_note_title(self, email: Dict) -> str:
+    def _format_note_title(self, email: Dict[str, Any]) -> str:
         """Format the note title using the template from config.
 
         Args:
@@ -199,10 +195,10 @@ class EmailProcessor:
             subject=email["subject"],
             date=email["date"],
             sender=email["sender"],
-            email_id=email["id"]
+            id=email["id"],
         )
 
-    def _format_note_body(self, email: Dict) -> str:
+    def _format_note_body(self, email: Dict[str, Any]) -> str:
         """Format the note body using the template from config.
 
         Args:
@@ -219,5 +215,5 @@ class EmailProcessor:
             body=email["body"],
             date=email["date"],
             sender=email["sender"],
-            email_id=email["id"]
+            id=email["id"],
         )

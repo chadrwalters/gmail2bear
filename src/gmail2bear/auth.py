@@ -3,7 +3,6 @@
 This module handles OAuth2 authentication with the Gmail API.
 """
 
-import json
 import logging
 import os
 import pickle
@@ -16,20 +15,24 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Gmail API scopes
 # https://developers.google.com/gmail/api/auth/scopes
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly",
-          "https://www.googleapis.com/auth/gmail.modify"]
+SCOPES = [
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.modify",
+]
 
 logger = logging.getLogger(__name__)
 
 
 def get_credentials(
-    credentials_path: str, token_path: Optional[str] = None, force_refresh: bool = False
+    credentials_path: str,
+    token_path: Optional[str] = None,
+    force_refresh: bool = False,
 ) -> Credentials:
     """Get Gmail API credentials.
 
     Args:
         credentials_path: Path to the credentials.json file
-        token_path: Path to save the token.pickle file (defaults to same directory as credentials)
+        token_path: Path to save the token.pickle file (defaults to same directory)
         force_refresh: Force reauthentication even if token exists
 
     Returns:
@@ -64,18 +67,20 @@ def get_credentials(
             logger.info("Refreshing expired credentials")
             try:
                 credentials.refresh(Request())
-            except Exception as e:
-                logger.warning(f"Error refreshing credentials: {e}")
+            except Exception as err:
+                logger.warning(f"Error refreshing credentials: {err}")
                 credentials = None
 
         # If still no valid credentials, run the OAuth flow
         if not credentials:
             logger.info("Running OAuth flow to get new credentials")
             try:
-                flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    credentials_path, SCOPES
+                )
                 credentials = flow.run_local_server(port=0)
-            except Exception as e:
-                raise ValueError(f"Authentication failed: {e}")
+            except Exception as err:
+                raise ValueError(f"Authentication failed: {err}") from err
 
         # Save the credentials for future use
         logger.debug(f"Saving credentials to {token_path}")

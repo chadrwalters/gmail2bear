@@ -40,6 +40,8 @@ dev = [
     "isort>=5.0.0",
     "flake8>=4.0.0",
     "mypy>=0.9.0",
+    "ruff>=0.2.0",
+    "pre-commit>=3.5.0",
 ]
 phase2 = [
     "html2text>=2020.0.0",
@@ -59,6 +61,8 @@ include = '\.pyi?$'
 [tool.isort]
 profile = "black"
 line_length = 88
+known_first_party = ["gmail2bear"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.mypy]
 python_version = "3.8"
@@ -71,3 +75,36 @@ disallow_incomplete_defs = true
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "C4", # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "N",  # pep8-naming
+    "D",  # pydocstyle
+    "UP", # pyupgrade
+    "S",  # flake8-bandit (security)
+    "A",  # flake8-builtins
+]
+ignore = [
+    "D203",  # one-blank-line-before-class
+    "D212",  # multi-line-summary-first-line
+    "S301",  # pickle-use (we need pickle for token storage)
+    "S105",  # hardcoded-password-string (false positives in tests)
+    "S106",  # hardcoded-password-func-arg (false positives in tests)
+    "S603",  # subprocess-without-shell-equals-true (needed for Bear integration)
+    "S607",  # start-process-with-partial-path (needed for Bear integration)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "D", "N"]  # Allow assert in tests, ignore docstrings and naming in tests
