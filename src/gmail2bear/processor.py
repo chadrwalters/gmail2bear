@@ -69,7 +69,17 @@ def retry_on_failure(
 
                     # Calculate backoff time with jitter
                     backoff_time = initial_backoff * (backoff_factor**attempt)
-                    jitter_amount = backoff_time * jitter * random.uniform(-1, 1)
+                    # Use secrets module for cryptographically secure random numbers
+                    try:
+                        import secrets
+
+                        jitter_amount = (
+                            backoff_time * jitter * (secrets.randbelow(200) / 100 - 1)
+                        )
+                    except ImportError:
+                        # Fall back to random if secrets not available
+                        # ruff: noqa: S311
+                        jitter_amount = backoff_time * jitter * random.uniform(-1, 1)
                     sleep_time = backoff_time + jitter_amount
 
                     # Log retry attempt
@@ -241,6 +251,9 @@ class EmailProcessor:
                 # Get processed email IDs
                 processed_ids = self.state_manager.get_processed_ids()
 
+                # Track emails processed in this check
+                emails_processed_this_check = 0
+
                 try:
                     # Get emails from sender with retry mechanism
                     emails = self._get_emails_with_retry(
@@ -259,19 +272,24 @@ class EmailProcessor:
                         for email in emails:
                             if self._process_single_email(email):
                                 processed_count += 1
+                                emails_processed_this_check += 1
 
                     # Reset consecutive errors on success
                     self.consecutive_errors = 0
 
                 except Exception as e:
                     self.consecutive_errors += 1
-                    error_msg = f"Error processing emails (attempt {self.consecutive_errors}): {e}"
+                    error_msg = (
+                        f"Error processing emails "
+                        f"(attempt {self.consecutive_errors}): {e}"
+                    )
                     logger.error(error_msg)
 
                     if self.consecutive_errors >= self.max_consecutive_errors:
                         critical_msg = (
                             f"Multiple consecutive errors ({self.consecutive_errors}). "
-                            f"Pausing email processing for {self.error_backoff_time} seconds."
+                            f"Pausing email processing for "
+                            f"{self.error_backoff_time} seconds."
                         )
                         logger.critical(critical_msg)
                         self.notification_manager.notify_error(critical_msg)
@@ -283,9 +301,12 @@ class EmailProcessor:
                         time.sleep(self.error_backoff_time)
                         continue
 
-                # Send notification if emails were processed and notifications are enabled
-                if processed_count > 0 and send_notification:
-                    self.notification_manager.notify_new_emails(processed_count)
+                # Send notification if emails were processed IN THIS CHECK
+                # and notifications are enabled
+                if emails_processed_this_check > 0 and send_notification:
+                    self.notification_manager.notify_new_emails(
+                        emails_processed_this_check
+                    )
 
                 if once:
                     break
@@ -371,7 +392,8 @@ class EmailProcessor:
                 except Exception as e:
                     self.consecutive_errors += 1
                     logger.error(
-                        f"Error processing emails (attempt {self.consecutive_errors}): {e}"
+                        f"Error processing emails "
+                        f"(attempt {self.consecutive_errors}): {e}"
                     )
                     self.notification_manager.notify_error(
                         f"Error processing emails: {e}"
@@ -381,7 +403,8 @@ class EmailProcessor:
                     if self.consecutive_errors >= self.max_consecutive_errors:
                         critical_msg = (
                             f"Multiple consecutive errors ({self.consecutive_errors}). "
-                            f"Entering error backoff period for {self.error_backoff_time} seconds."
+                            f"Entering error backoff period for "
+                            f"{self.error_backoff_time} seconds."
                         )
                         logger.critical(critical_msg)
                         self.notification_manager.notify_error(critical_msg)
@@ -537,7 +560,8 @@ class EmailProcessor:
                 self.notification_manager.notify_network_status(False)
             elif not was_available and self.network_available:
                 logger.info(
-                    f"Network connection restored after {self.network_failure_count} failures"
+                    f"Network connection restored after "
+                    f"{self.network_failure_count} failures"
                 )
                 self.notification_manager.notify_network_status(True)
                 self.network_failure_count = 0
@@ -659,7 +683,7 @@ class EmailProcessor:
             Markdown formatted content
         """
         try:
-            return self.html_converter.handle(html_content)
+            return str(self.html_converter.handle(html_content))
         except Exception as e:
             logger.error(f"Error converting HTML to Markdown: {e}")
             error_msg = f"Error converting HTML content: {str(e)}\n\n"
