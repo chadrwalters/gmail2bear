@@ -6,7 +6,6 @@ import pickle
 from unittest import mock
 
 import pytest
-
 from gmail2bear.auth import (
     SCOPES,
     KeychainManager,

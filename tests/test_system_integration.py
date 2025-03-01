@@ -4,7 +4,6 @@ import signal
 from unittest import mock
 
 import pytest
-
 from gmail2bear.processor import EmailProcessor
 
 
@@ -68,7 +67,9 @@ def processor(
         "gmail2bear.processor.NotificationManager"
     ), mock.patch("gmail2bear.processor.get_credentials"), mock.patch(
         "gmail2bear.processor.GmailClient"
-    ), mock.patch("gmail2bear.processor.Config"):
+    ), mock.patch(
+        "gmail2bear.processor.Config"
+    ):
         # Mock the Config class
         mock_config = mock.MagicMock()
         mock_config.loaded = True

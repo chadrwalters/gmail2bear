@@ -3,7 +3,6 @@
 from unittest import mock
 
 import pytest
-
 from gmail2bear.notifications import NotificationManager  # type: ignore
 
 

@@ -4,10 +4,9 @@ import time
 from unittest import mock
 
 import pytest
-from googleapiclient.errors import HttpError
-
 from gmail2bear.gmail_client import GmailClient
 from gmail2bear.processor import EmailProcessor, retry_on_failure
+from googleapiclient.errors import HttpError
 
 
 def test_retry_on_failure_decorator():

@@ -6,7 +6,6 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-
 from gmail2bear.launchagent.manager import LaunchAgentManager
 
 
@@ -227,7 +226,11 @@ def test_install_success(launch_agent_manager):
         launch_agent_manager, "is_macos", return_value=True
     ), mock.patch.object(
         launch_agent_manager, "_load_agent", return_value=True
-    ), mock.patch("os.makedirs") as mock_makedirs, mock.patch("os.chmod") as mock_chmod:
+    ), mock.patch(
+        "os.makedirs"
+    ) as mock_makedirs, mock.patch(
+        "os.chmod"
+    ) as mock_chmod:
         assert launch_agent_manager.install() is True
 
         # Verify directories were created
@@ -294,7 +297,9 @@ def test_uninstall_error(launch_agent_manager):
         launch_agent_manager, "is_macos", return_value=True
     ), mock.patch.object(
         launch_agent_manager, "_unload_agent", return_value=True
-    ), mock.patch("os.remove") as mock_remove:
+    ), mock.patch(
+        "os.remove"
+    ) as mock_remove:
         # Make remove raise an exception
         mock_remove.side_effect = OSError("Test error")
 
@@ -321,7 +326,9 @@ def test_start_already_running(launch_agent_manager):
         launch_agent_manager, "is_macos", return_value=True
     ), mock.patch.object(
         launch_agent_manager, "is_installed", return_value=True
-    ), mock.patch.object(launch_agent_manager, "is_running", return_value=True):
+    ), mock.patch.object(
+        launch_agent_manager, "is_running", return_value=True
+    ):
         assert launch_agent_manager.start() is True
 
 
@@ -333,7 +340,9 @@ def test_start_success(launch_agent_manager):
         launch_agent_manager, "is_installed", return_value=True
     ), mock.patch.object(
         launch_agent_manager, "is_running", return_value=False
-    ), mock.patch.object(launch_agent_manager, "_load_agent", return_value=True):
+    ), mock.patch.object(
+        launch_agent_manager, "_load_agent", return_value=True
+    ):
         assert launch_agent_manager.start() is True
 
         # Verify agent was loaded
@@ -360,7 +369,9 @@ def test_stop_not_running(launch_agent_manager):
         launch_agent_manager, "is_macos", return_value=True
     ), mock.patch.object(
         launch_agent_manager, "is_installed", return_value=True
-    ), mock.patch.object(launch_agent_manager, "is_running", return_value=False):
+    ), mock.patch.object(
+        launch_agent_manager, "is_running", return_value=False
+    ):
         assert launch_agent_manager.stop() is True
 
 
@@ -372,7 +383,9 @@ def test_stop_success(launch_agent_manager):
         launch_agent_manager, "is_installed", return_value=True
     ), mock.patch.object(
         launch_agent_manager, "is_running", return_value=True
-    ), mock.patch.object(launch_agent_manager, "_unload_agent", return_value=True):
+    ), mock.patch.object(
+        launch_agent_manager, "_unload_agent", return_value=True
+    ):
         assert launch_agent_manager.stop() is True
 
         # Verify agent was unloaded
@@ -401,7 +414,9 @@ def test_restart_success(launch_agent_manager):
         launch_agent_manager, "is_installed", return_value=True
     ), mock.patch.object(
         launch_agent_manager, "stop", return_value=True
-    ), mock.patch.object(launch_agent_manager, "start", return_value=True):
+    ), mock.patch.object(
+        launch_agent_manager, "start", return_value=True
+    ):
         assert launch_agent_manager.restart() is True
 
         # Verify stop and start were called
@@ -415,7 +430,9 @@ def test_restart_stop_failure(launch_agent_manager):
         launch_agent_manager, "is_macos", return_value=True
     ), mock.patch.object(
         launch_agent_manager, "is_installed", return_value=True
-    ), mock.patch.object(launch_agent_manager, "stop", return_value=False):
+    ), mock.patch.object(
+        launch_agent_manager, "stop", return_value=False
+    ):
         assert launch_agent_manager.restart() is False
 
         # Verify stop was called but not start

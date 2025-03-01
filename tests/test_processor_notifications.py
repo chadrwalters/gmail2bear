@@ -5,7 +5,6 @@ import tempfile
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from gmail2bear.processor import EmailProcessor
 
 
@@ -70,7 +69,9 @@ def processor(mock_config, mock_state_manager, mock_bear_client, mock_gmail_clie
         delete=False
     ) as credentials_file, tempfile.NamedTemporaryFile(
         delete=False
-    ) as state_file, tempfile.NamedTemporaryFile(delete=False) as token_file:
+    ) as state_file, tempfile.NamedTemporaryFile(
+        delete=False
+    ) as token_file:
         config_path = config_file.name
         credentials_path = credentials_file.name
         state_path = state_file.name
