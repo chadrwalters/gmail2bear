@@ -4,6 +4,8 @@ import os
 import platform
 import sys
 
+import pytest
+
 
 def pytest_ignore_collect(collection_path, config):
     """Skip macOS-specific test files on non-macOS platforms."""
@@ -30,3 +32,13 @@ def pytest_configure(config):
     print(f"Current directory: {os.getcwd()}")
     print(f"PYTHONPATH: {os.environ.get('PYTHONPATH', 'Not set')}")
     print("============================\n")
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip macOS-specific tests on non-macOS platforms."""
+    if platform.system() != "Darwin":
+        skip_macos = pytest.mark.skip(reason="Test requires macOS")
+        for item in items:
+            if "test_bear" in item.nodeid or "test_processor" in item.nodeid:
+                item.add_marker(skip_macos)
+                print(f"Adding skip marker to: {item.nodeid}")
