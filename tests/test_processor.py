@@ -1,9 +1,16 @@
 """Tests for the processor module."""
 
+import platform
 from unittest import mock
 
 import pytest
+
 from gmail2bear.processor import EmailProcessor
+
+# Skip Bear-related tests on non-macOS platforms
+skip_on_non_macos = pytest.mark.skipif(
+    platform.system() != "Darwin", reason="Bear tests only run on macOS"
+)
 
 
 @pytest.fixture
@@ -192,7 +199,7 @@ def test_process_emails_no_emails(processor):
     processor.gmail_client = mock.Mock()
     processor.gmail_client.get_emails_from_sender.return_value = []
 
-    # Mock the loaded property
+    # Mock the loaded property and sender_email
     with mock.patch.object(processor.config, "loaded", True, create=True):
         with mock.patch.object(
             processor.config, "get_sender_email", return_value="test@example.com"
@@ -204,6 +211,7 @@ def test_process_emails_no_emails(processor):
     mock_logger.info.assert_any_call("No new emails to process")
 
 
+@skip_on_non_macos
 def test_process_single_email_success(processor, mock_email):
     """Test that _process_single_email successfully processes an email."""
     # Set up mocks
@@ -241,6 +249,7 @@ def test_process_single_email_already_processed(processor, mock_email):
     mock_logger.debug.assert_called_once_with(mock.ANY)
 
 
+@skip_on_non_macos
 def test_process_single_email_bear_failure(processor, mock_email):
     """Test that _process_single_email handles Bear note creation failures."""
     # Set up mocks
