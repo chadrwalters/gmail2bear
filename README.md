@@ -2,6 +2,8 @@
 
 A Python application that automatically converts emails from Gmail to notes in Bear.
 
+> **Important**: This application requires macOS as it integrates with the Bear note-taking app, which is only available on macOS. The test suite also contains macOS-specific tests that must be run locally.
+
 ## Overview
 
 Gmail to Bear is a tool that monitors your Gmail inbox for emails from specific senders and automatically converts them into Bear notes using customizable templates. It helps you save time by eliminating the need to manually copy and paste email content into your note-taking app.
@@ -559,13 +561,35 @@ This project uses several tools to maintain code quality:
 
 ### Running Tests
 
+To run the tests locally:
+
 ```bash
-# Run all tests
+# With UV (recommended)
 uv run pytest
 
-# Run tests with coverage
+# Run with coverage
 uv run pytest --cov=gmail2bear
+
+# Run specific tests
+uv run pytest tests/test_config.py
 ```
+
+If you're developing on a non-macOS platform, you can still run the non-macOS specific tests:
+
+```bash
+# Skip macOS-specific tests
+uv run pytest -k "not test_bear and not test_processor"
+```
+
+The test suite includes comprehensive tests for all components, including:
+- Configuration management
+- Gmail client functionality
+- Authentication and token handling
+- State management
+- CLI interface
+- Launch agent management
+- Notification system
+- Error handling and retry mechanisms
 
 ## Contributing
 
