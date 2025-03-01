@@ -1,9 +1,17 @@
 """Tests for the Bear module."""
 
+import platform
 import urllib.parse
 from unittest import mock
 
+import pytest
+
 from gmail2bear.bear import BearClient
+
+# Skip all tests in this module on non-macOS platforms
+pytestmark = pytest.mark.skipif(
+    platform.system() != "Darwin", reason="Bear tests only run on macOS"
+)
 
 
 def test_bear_client_init():
