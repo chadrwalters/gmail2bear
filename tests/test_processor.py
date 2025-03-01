@@ -5,16 +5,25 @@ from unittest import mock
 
 import pytest
 
-from gmail2bear.processor import EmailProcessor
+# Skip all tests in this module on non-macOS platforms
+pytestmark = pytest.mark.skipif(
+    platform.system() != "Darwin", reason="Processor tests only run on macOS"
+)
+
+# Conditionally import EmailProcessor to avoid macOS-specific imports on non-macOS platforms
+if platform.system() == "Darwin":
+    from gmail2bear.processor import EmailProcessor
+else:
+    # Create a dummy EmailProcessor class for type checking
+    class DummyEmailProcessor:
+        pass
+
+    EmailProcessor = DummyEmailProcessor
+
 
 # Skip Bear-related tests on non-macOS platforms
 skip_on_non_macos = pytest.mark.skipif(
     platform.system() != "Darwin", reason="Bear tests only run on macOS"
-)
-
-# Skip all tests in this module on non-macOS platforms
-pytestmark = pytest.mark.skipif(
-    platform.system() != "Darwin", reason="Processor tests only run on macOS"
 )
 
 
