@@ -12,6 +12,11 @@ skip_on_non_macos = pytest.mark.skipif(
     platform.system() != "Darwin", reason="Bear tests only run on macOS"
 )
 
+# Skip all tests in this module on non-macOS platforms
+pytestmark = pytest.mark.skipif(
+    platform.system() != "Darwin", reason="Processor tests only run on macOS"
+)
+
 
 @pytest.fixture
 def mock_config_path(tmp_path):
