@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "A tool to automatically convert Gmail emails to Bear notes"
 readme = "README.md"
 authors = [
-    {name = "Chad Walters", email = "chad@walters.io"}
+    {name = "Chad Walters", email = "chad.walters@gmail.com"}
 ]
 license = {text = "MIT"}
 classifiers = [
@@ -46,7 +46,6 @@ dev = [
     "pre-commit>=3.5.0",
 ]
 phase2 = [
-    "html2text>=2020.0.0",
 ]
 
 [project.scripts]
