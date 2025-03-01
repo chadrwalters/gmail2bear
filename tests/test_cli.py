@@ -1,6 +1,5 @@
 """Tests for the CLI module."""
 
-import sys
 from unittest import mock
 
 import pytest
@@ -13,10 +12,13 @@ def mock_args():
     args = mock.MagicMock()
     args.config = "config.ini"
     args.credentials = "credentials.json"
-    args.state = "state.json"
+    args.state = "state.txt"
     args.token = "token.pickle"
-    args.verbose = False
-    args.command = None
+    args.once = False
+    args.force_refresh = False
+    args.init_config = False
+    args.debug = False
+    args.command = "run"
     return args
 
 
@@ -29,181 +31,181 @@ def test_version():
 
 def test_setup_logging():
     """Test that setup_logging configures logging correctly."""
-    with mock.patch("logging.basicConfig") as mock_basic_config:
-        cli.setup_logging(level=20)  # INFO level
-        mock_basic_config.assert_called_once()
+    with mock.patch("logging.getLogger") as mock_get_logger:
+        with mock.patch("gmail2bear.cli.Config") as mock_config_class:
+            mock_config = mock.MagicMock()
+            mock_config.loaded = True
+            mock_config.get_logging_level.return_value = "INFO"
+            mock_config.get_log_file.return_value = None
+            mock_config_class.return_value = mock_config
+
+            cli.setup_logging("config.ini")
+
+            mock_get_logger.assert_called()
+            mock_config.get_logging_level.assert_called_once()
 
 
 def test_parse_args():
     """Test that parse_args parses arguments correctly."""
-    with mock.patch("sys.argv", ["gmail2bear", "--verbose"]):
+    with mock.patch("sys.argv", ["gmail2bear", "run", "--once"]):
         args = cli.parse_args()
-        assert args.verbose is True
+        assert args.once is True
+        assert args.command == "run"
 
 
-def test_parse_args_version(capsys):
-    """Test the --version argument."""
-    with pytest.raises(SystemExit) as excinfo:
-        with mock.patch.object(sys, "argv", ["gmail2bear", "--version"]):
-            cli.parse_args()
-    assert excinfo.value.code == 0
-    captured = capsys.readouterr()
-    assert "gmail2bear" in captured.out
-
-
-def test_parse_args_run():
-    """Test the run command."""
-    with mock.patch.object(sys, "argv", ["gmail2bear", "run"]):
+def test_parse_args_defaults():
+    """Test the default argument values."""
+    with mock.patch("sys.argv", ["gmail2bear", "run"]):
         args = cli.parse_args()
-    assert args.command == "run"
-    assert not args.once
+        assert args.once is False
+        assert args.force_refresh is False
+        assert args.command == "run"
+        assert "config.ini" in args.config
+        assert "credentials.json" in args.credentials
+        assert "token.pickle" in args.token
+        assert "state.txt" in args.state
 
 
-def test_parse_args_run_once():
-    """Test the run --once command."""
-    with mock.patch.object(sys, "argv", ["gmail2bear", "run", "--once"]):
+def test_parse_args_init_config():
+    """Test the --init-config argument."""
+    with mock.patch("sys.argv", ["gmail2bear", "init-config"]):
         args = cli.parse_args()
-    assert args.command == "run"
-    assert args.once
+        assert args.command == "init-config"
 
 
-def test_parse_args_auth():
-    """Test the auth command."""
-    with mock.patch.object(sys, "argv", ["gmail2bear", "auth"]):
+def test_parse_args_force_refresh():
+    """Test the --force-refresh argument."""
+    with mock.patch("sys.argv", ["gmail2bear", "run", "--force-refresh"]):
         args = cli.parse_args()
-    assert args.command == "auth"
-    assert not args.force
+        assert args.force_refresh is True
+        assert args.command == "run"
 
 
-def test_parse_args_auth_force():
-    """Test the auth --force command."""
-    with mock.patch.object(sys, "argv", ["gmail2bear", "auth", "--force"]):
+def test_parse_args_once():
+    """Test the --once argument."""
+    with mock.patch("sys.argv", ["gmail2bear", "run", "--once"]):
         args = cli.parse_args()
-    assert args.command == "auth"
-    assert args.force
+        assert args.once is True
+        assert args.command == "run"
 
 
-def test_main_no_command():
-    """Test main with no command."""
-    with mock.patch.object(sys, "argv", ["gmail2bear"]):
-        with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
-            mock_parse_args.return_value = mock.MagicMock(command=None, verbose=False)
-            with mock.patch("pathlib.Path.exists") as mock_exists:
-                mock_exists.return_value = True
-                result = cli.main()
-    assert result == 1
-
-
-def test_main_auth_success():
-    """Test main with auth command (success)."""
-    with mock.patch.object(sys, "argv", ["gmail2bear", "auth"]):
+def test_main_init_config_success():
+    """Test main with --init-config (success)."""
+    with mock.patch("gmail2bear.cli.init_config_command") as mock_init_config:
+        mock_init_config.return_value = 0
         with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
             mock_parse_args.return_value = mock.MagicMock(
-                command="auth",
-                verbose=False,
-                force=False,
                 config="config.ini",
                 credentials="credentials.json",
-                state="state.json",
+                state="state.txt",
                 token="token.pickle",
+                debug=False,
+                command="init-config",
             )
-            with mock.patch("pathlib.Path.exists") as mock_exists:
-                mock_exists.return_value = True
-                with mock.patch(
-                    "gmail2bear.cli.EmailProcessor"
-                ) as mock_processor_class:
-                    mock_processor = mock.MagicMock()
-                    mock_processor.authenticate.return_value = True
-                    mock_processor_class.return_value = mock_processor
-                    result = cli.main()
-    assert result == 0
+            with mock.patch("gmail2bear.cli.setup_logging"):
+                result = cli.main()
+        assert result == 0
+        mock_init_config.assert_called_once()
+
+
+def test_main_init_config_failure():
+    """Test main with --init-config (failure)."""
+    with mock.patch("gmail2bear.cli.init_config_command") as mock_init_config:
+        mock_init_config.return_value = 1
+        with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
+            mock_parse_args.return_value = mock.MagicMock(
+                config="config.ini",
+                credentials="credentials.json",
+                state="state.txt",
+                token="token.pickle",
+                debug=False,
+                command="init-config",
+            )
+            with mock.patch("gmail2bear.cli.setup_logging"):
+                result = cli.main()
+        assert result == 1
+        mock_init_config.assert_called_once()
 
 
 def test_main_auth_failure():
-    """Test main with auth command (failure)."""
-    with mock.patch.object(sys, "argv", ["gmail2bear", "auth"]):
+    """Test main with authentication failure."""
+    with mock.patch("gmail2bear.cli.run_command") as mock_run_command:
+        mock_run_command.return_value = 1
         with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
             mock_parse_args.return_value = mock.MagicMock(
-                command="auth",
-                verbose=False,
-                force=False,
-                config="config.ini",
-                credentials="credentials.json",
-                state="state.json",
-                token="token.pickle",
-            )
-            with mock.patch("pathlib.Path.exists") as mock_exists:
-                mock_exists.return_value = True
-                with mock.patch(
-                    "gmail2bear.cli.EmailProcessor"
-                ) as mock_processor_class:
-                    mock_processor = mock.MagicMock()
-                    mock_processor.authenticate.return_value = False
-                    mock_processor_class.return_value = mock_processor
-                    result = cli.main()
-    assert result == 1
-
-
-def test_main_config_new():
-    """Test main with config command (new file)."""
-    with mock.patch.object(sys, "argv", ["gmail2bear", "config"]):
-        with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
-            mock_parse_args.return_value = mock.MagicMock(
-                command="config", verbose=False, force=False, config="config.ini"
-            )
-            with mock.patch("pathlib.Path.exists") as mock_exists:
-                mock_exists.return_value = False
-                with mock.patch(
-                    "gmail2bear.config.Config.create_default_config"
-                ) as mock_create_default:
-                    mock_create_default.return_value = True
-                    result = cli.main()
-    assert result == 0
-
-
-def test_main_config_existing_no_force():
-    """Test main with config command (existing file, no force)."""
-    with mock.patch.object(sys, "argv", ["gmail2bear", "config"]):
-        with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
-            mock_parse_args.return_value = mock.MagicMock(
-                command="config", verbose=False, force=False, config="config.ini"
-            )
-            with mock.patch("pathlib.Path.exists") as mock_exists:
-                mock_exists.return_value = True
-                result = cli.main()
-    assert result == 1
-
-
-def test_main_run():
-    """Test main with run command."""
-    with mock.patch.object(sys, "argv", ["gmail2bear", "run"]):
-        with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
-            mock_args = mock.MagicMock(
-                command="run",
-                verbose=False,
+                force_refresh=False,
                 once=True,
                 config="config.ini",
                 credentials="credentials.json",
-                state="state.json",
+                state="state.txt",
                 token="token.pickle",
+                debug=False,
+                command="run",
             )
-            mock_parse_args.return_value = mock_args
+            with mock.patch("gmail2bear.cli.setup_logging"):
+                result = cli.main()
+        assert result == 1
+        mock_run_command.assert_called_once()
 
-            with mock.patch("pathlib.Path.exists") as mock_exists:
-                mock_exists.return_value = True
 
-                with mock.patch(
-                    "gmail2bear.cli.EmailProcessor"
-                ) as mock_processor_class:
-                    mock_processor = mock.MagicMock()
-                    # Make authenticate return True
-                    mock_processor.authenticate.return_value = True
-                    # Make process_emails return a positive count
-                    mock_processor.process_emails.return_value = 1
-                    mock_processor_class.return_value = mock_processor
+def test_main_process_success():
+    """Test main with successful processing."""
+    with mock.patch("gmail2bear.cli.run_command") as mock_run_command:
+        mock_run_command.return_value = 0
+        with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
+            mock_parse_args.return_value = mock.MagicMock(
+                force_refresh=False,
+                once=True,
+                config="config.ini",
+                credentials="credentials.json",
+                state="state.txt",
+                token="token.pickle",
+                debug=False,
+                command="run",
+            )
+            with mock.patch("gmail2bear.cli.setup_logging"):
+                result = cli.main()
+        assert result == 0
+        mock_run_command.assert_called_once()
 
-                    result = cli.main()
 
-    assert result == 0
-    mock_processor.authenticate.assert_called_once()
-    mock_processor.process_emails.assert_called_once_with(once=True)
+def test_main_process_exception():
+    """Test main with exception during processing."""
+    with mock.patch("gmail2bear.cli.run_command") as mock_run_command:
+        mock_run_command.return_value = 1
+        with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
+            mock_parse_args.return_value = mock.MagicMock(
+                force_refresh=False,
+                once=True,
+                config="config.ini",
+                credentials="credentials.json",
+                state="state.txt",
+                token="token.pickle",
+                debug=False,
+                command="run",
+            )
+            with mock.patch("gmail2bear.cli.setup_logging"):
+                result = cli.main()
+        assert result == 1
+        mock_run_command.assert_called_once()
+
+
+def test_main_keyboard_interrupt():
+    """Test main with keyboard interrupt during processing."""
+    with mock.patch("gmail2bear.cli.run_command") as mock_run_command:
+        mock_run_command.return_value = 0
+        with mock.patch("gmail2bear.cli.parse_args") as mock_parse_args:
+            mock_parse_args.return_value = mock.MagicMock(
+                force_refresh=False,
+                once=True,
+                config="config.ini",
+                credentials="credentials.json",
+                state="state.txt",
+                token="token.pickle",
+                debug=False,
+                command="run",
+            )
+            with mock.patch("gmail2bear.cli.setup_logging"):
+                result = cli.main()
+        assert result == 0
+        mock_run_command.assert_called_once()

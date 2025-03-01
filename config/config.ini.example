@@ -1,18 +1,31 @@
 [gmail]
-# Email address to monitor (comma-separated for multiple in Phase 2)
+# Email address(es) to monitor (comma-separated for multiple)
+# Examples:
+# sender_email = example@gmail.com
+# sender_email = example1@gmail.com, example2@gmail.com
 sender_email = example@gmail.com
 
 # How often to check for new emails (in seconds, for Phase 3)
 poll_interval = 300
 
+# Whether to archive emails after processing
+archive_emails = false
+
 [bear]
 # Template for Bear note title
-# Available placeholders: {subject}, {date}, {sender}
-note_title = Email: {subject}
+# Available placeholders: {subject}, {sender}, {id}
+# Date formatting: {date} or with format specifiers {date:%Y-%m-%d}
+# Examples:
+# note_title_template = Email: {subject}
+# note_title_template = {date:%Y%m%d} - Email from {sender}
+note_title_template = Email: {subject}
 
-# Template for Bear note body (Phase 2)
-# Available placeholders: {subject}, {body}, {date}, {sender}, {email_id}
-note_body = # {subject}
+# Template for Bear note body
+# Available placeholders: {subject}, {body}, {sender}, {id}
+# Date formatting: {date} or with format specifiers {date:%Y-%m-%d %H:%M}
+# Examples:
+# note_body_template = # {subject}\n\nReceived on {date:%Y-%m-%d}\n\n{body}
+note_body_template = # {subject}
 
 From: {sender}
 Date: {date}
@@ -20,7 +33,7 @@ Date: {date}
 {body}
 
 ---
-Source: Gmail ID {email_id}
+Source: Gmail ID {id}
 
 # Tags to add to Bear notes (comma-separated)
 tags = email,gmail
@@ -29,5 +42,21 @@ tags = email,gmail
 # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 level = INFO
 
-# Log file path (for Phase 2)
-# file = ~/.gmail2bear/gmail2bear.log
+# Log file path (uncomment to enable file logging)
+file = ~/.gmail2bear/gmail2bear.log
+
+# Maximum log file size in KB before rotation (1024 = 1MB)
+max_log_size = 1024
+
+# Number of backup log files to keep
+backup_count = 3
+
+[service]
+# Whether to show system notifications
+show_notifications = true
+
+# Whether to start the service at login
+start_at_login = true
+
+# Notification sound (default, Basso, Blow, Bottle, Frog, Funk, Glass, Hero, Morse, Ping, Pop, Purr, Sosumi, Submarine, Tink)
+notification_sound = default

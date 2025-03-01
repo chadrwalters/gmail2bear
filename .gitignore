@@ -149,3 +149,5 @@ MagicMock/
 # Sensitive data
 .env
 .secrets
+
+.gmail2bear/

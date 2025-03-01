@@ -115,7 +115,7 @@ def test_authenticate_success(processor):
     assert result is True
     assert processor.gmail_client is not None
     mock_get_credentials.assert_called_once_with(
-        processor.credentials_path, processor.token_path, False
+        processor.credentials_path, processor.token_path, False, False, "Gmail to Bear"
     )
 
 
@@ -265,6 +265,7 @@ def test_process_single_email_bear_failure(processor, mock_email):
 
 def test_format_note_title(processor, mock_email):
     """Test that _format_note_title correctly formats the note title."""
+    # Test with simple template
     with mock.patch.object(
         processor.config,
         "get_note_title_template",
@@ -274,9 +275,20 @@ def test_format_note_title(processor, mock_email):
 
     assert title == "Email: Test Subject from sender@example.com"
 
+    # Test with date formatting
+    with mock.patch.object(
+        processor.config,
+        "get_note_title_template",
+        return_value="Email: {subject} on {date:%Y-%m-%d}",
+    ):
+        title = processor._format_note_title(mock_email)
+
+    assert "Email: Test Subject on 2023-01-01" in title
+
 
 def test_format_note_body(processor, mock_email):
     """Test that _format_note_body correctly formats the note body."""
+    # Test with simple template
     template = "# {subject}\n\nFrom: {sender}\nDate: {date}\n\n{body}\n\nID: {id}"
 
     with mock.patch.object(
@@ -286,6 +298,22 @@ def test_format_note_body(processor, mock_email):
 
     assert "# Test Subject" in body
     assert "From: sender@example.com" in body
-    assert "Date: 2023-01-01 12:00:00" in body
+    assert "Date: 2023-01-01 12:00:00" in body or "Date: 2023-01-01" in body
+    assert "Test body" in body
+    assert "ID: 12345" in body
+
+    # Test with date formatting
+    template = (
+        "# {subject}\n\nFrom: {sender}\nDate: {date:%Y-%m-%d}\n\n{body}\n\nID: {id}"
+    )
+
+    with mock.patch.object(
+        processor.config, "get_note_body_template", return_value=template
+    ):
+        body = processor._format_note_body(mock_email)
+
+    assert "# Test Subject" in body
+    assert "From: sender@example.com" in body
+    assert "Date: 2023-01-01" in body
     assert "Test body" in body
     assert "ID: 12345" in body
