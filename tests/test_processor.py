@@ -10,15 +10,25 @@ pytestmark = pytest.mark.skipif(
     platform.system() != "Darwin", reason="Processor tests only run on macOS"
 )
 
-# Conditionally import EmailProcessor to avoid macOS-specific imports on non-macOS platforms
+# Conditionally import modules to avoid macOS-specific imports on non-macOS platforms
 if platform.system() == "Darwin":
+    from gmail2bear.bear import BearClient
     from gmail2bear.processor import EmailProcessor
 else:
-    # Create a dummy EmailProcessor class for type checking
+    # Create dummy classes for type checking
     class DummyEmailProcessor:
-        pass
+        def __init__(self, **kwargs):
+            self.config_path = kwargs.get("config_path")
+            self.credentials_path = kwargs.get("credentials_path")
+            self.state_path = kwargs.get("state_path")
+            self.token_path = kwargs.get("token_path")
+            self.config = mock.MagicMock()
+            self.state_manager = mock.MagicMock()
+            self.bear_client = mock.MagicMock()
+            self.gmail_client = None
 
     EmailProcessor = DummyEmailProcessor
+    BearClient = mock.MagicMock()
 
 
 # Skip Bear-related tests on non-macOS platforms
@@ -79,20 +89,29 @@ def processor(
     mock_config_path, mock_credentials_path, mock_state_path, mock_token_path
 ):
     """Create a processor with mock paths."""
-    with mock.patch("gmail2bear.processor.BearClient") as mock_bear_client_class:
-        # Set up the mock BearClient instance
-        mock_bear_client = mock.MagicMock()
-        mock_bear_client_class.return_value = mock_bear_client
+    if platform.system() == "Darwin":
+        with mock.patch("gmail2bear.processor.BearClient") as mock_bear_client_class:
+            # Set up the mock BearClient instance
+            mock_bear_client = mock.MagicMock()
+            mock_bear_client_class.return_value = mock_bear_client
 
-        processor = EmailProcessor(
+            processor = EmailProcessor(
+                config_path=mock_config_path,
+                credentials_path=mock_credentials_path,
+                state_path=mock_state_path,
+                token_path=mock_token_path,
+            )
+
+            # Return the processor with the mocked BearClient
+            return processor
+    else:
+        # On non-macOS platforms, return a dummy processor
+        return EmailProcessor(
             config_path=mock_config_path,
             credentials_path=mock_credentials_path,
             state_path=mock_state_path,
             token_path=mock_token_path,
         )
-
-        # Return the processor with the mocked BearClient
-        return processor
 
 
 @pytest.fixture
